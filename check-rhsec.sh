@@ -362,13 +362,13 @@ fi
 ##############
 CMD="running daemons"
 sinfo "Test: $CMD"
-DMNS=(auditd crond rsyslogd sshd chronyd systemd-journald systemd-logind NetworkManager polkit)
+DMNS=(auditd crond rsyslogd sshd chronyd systemd-journal systemd-logind NetworkManager polkit)
 j=0 
 max=${#DMNS[*]}
 while [ $j -lt $max ] ; do
-        CURVAL=$(ps -lae | grep ${DMNS[j]})
+        CURVAL=$(ps -lae | grep "${DMNS[j]}")
         if [ "$CURVAL" == "" ] ; then
-                linfo "$CMD: ${DMNS[j]} not running"
+                lerr "$CMD: ${DMNS[j]} not running"
         fi
         j=$((j+1))
 done
@@ -496,7 +496,7 @@ fi
 
 CMD="Remote login /etc/securetty (rlogin,rsh,rexec)"
 sinfo "Test: $CMD"
-egrep -qi "rlogin|rsh|rexec" /etc/securetty
+egrep -qi "rlogin|rsh|rexec" /etc/securetty 2>/dev/null
 if [ $? -eq 0 ] ; then
 	lerr "$CMD"
 fi
@@ -579,12 +579,12 @@ fi
 ##############
 CMD="SecureTTY"
 sinfo "Test: $CMD"
-STY=$(egrep -v "^(console|tty1|hvc0)$" /etc/securetty | tr "\n" " ")
+STY=$(egrep -v "^(console|tty1|hvc0)$" /etc/securetty 2>/dev/null | tr "\n" " ")
 if [ "$STY" != "" ] ; then
 	lerr "$CMD: invalid tty in /etc/securetty: $STY"
 fi
 
-PERM=$(ls -ld /etc/securetty | sed -n "s/^\(..........\).*/\1/gp")
+PERM=$(ls -ld /etc/securetty 2>/dev/null | sed -n "s/^\(..........\).*/\1/gp")
 if [ "$PERM" != "-rw-------" ] ; then
 	lerr "$CMD: Invalid permission for /etc/securetty"
 fi
@@ -721,8 +721,8 @@ for i in 4000 2000 ; do
 		(( FOUND+=1 ))
 	done
 done
-if [ FOUND -gt 0 ] ; then
-	lerr "$CMD: $FOUND setuid/setgid file(s) are group/world writeable" 
+if [ ${FOUND} -gt 0 ] ; then
+	lerr "${CMD}: ${FOUND} setuid/setgid file(s) are group/world writeable" 
 fi
 
 ##############
@@ -862,12 +862,12 @@ if [ $? -ne 0 ] ; then
 fi
 
 ##############
-# Test: Generic accounts
-# Generic accounts (other than standard system ones) should be documented.
+# Test: Local user accounts
+# Local user accounts (other than standard system ones) should be documented.
 ##############
-CMD="Generic accounts"
+CMD="Local user accounts"
 sinfo "Test: $CMD"
-GA=$(egrep -v "(^root|^adm|^bin|^daemon|^shutdown|^halt|^mail|^operator|^nobody|^systemd-network|^dbus|^polkitd|^tss|^libstoragemgmt|^rpc|^unbound|^radvd|^rpcuser|^nfsnobody|^qemu|^postfix|^sshd|^chrony|^tcpdump|^puppet|^nagios|^sssd|^bacula|^dped|^apache|^rear|^mysql|^lp|^colord|^named|^git|^git-worker|^gitolite3|^openldap|^webldappwd|^e2sys-ilhousekeeper|^radiusd|^clamupdate|^openldap|^geoclue|^rtkit|^pulse|^setroubleshoot|^gdm|^gnome-initial-setup|^avahi|^smmsp|^oracle|^epmd|^squid|^c-icap|^clamav|^splunk|^ftp|^dhcpd|^confluence|^jira|^clamscan|^node-exporter|^node_exporter|^rpmbuild|^openvpn|^systemd-coredump|^systemd-resolve|^sync|^clevis|^cockpit-ws|^insights|^systemd-oom)" /etc/passwd)
+GA=$(egrep -v "(^root|^adm|^bin|^daemon|^shutdown|^halt|^mail|^operator|^nobody|^systemd-network|^dbus|^polkitd|^tss|^libstoragemgmt|^rpc|^unbound|^radvd|^rpcuser|^nfsnobody|^qemu|^postfix|^sshd|^chrony|^tcpdump|^puppet|^nagios|^sssd|^bacula|^dped|^apache|^rear|^mysql|^lp|^colord|^named|^git|^git-worker|^gitolite3|^openldap|^webldappwd|^e2sys-ilhousekeeper|^radiusd|^clamupdate|^openldap|^geoclue|^rtkit|^pulse|^setroubleshoot|^gdm|^gnome-initial-setup|^avahi|^smmsp|^oracle|^epmd|^squid|^c-icap|^clamav|^splunk|^ftp|^dhcpd|^confluence|^jira|^clamscan|^node-exporter|^node_exporter|^rpmbuild|^openvpn|^systemd-coredump|^systemd-resolve|^sync|^clevis|^cockpit-ws|^insights|^systemd-oom|^pipewire|^ldap|^saslauth|^flatpak|^dnsmasq)" /etc/passwd)
 if [ "$GA" != "" ] ; then
 	lerr "$CMD: Unknown accounts in /etc/passwd:\n$GA"
 fi
@@ -950,7 +950,7 @@ if [ -n "$SERVICES" ] ; then
 fi
 $($CHECKRESTART -r 1>/dev/null 2>&1)
 if [ $? -ne 0 ] ; then
-        linfo "Server needs reboot"
+        lerr "Server needs reboot"
 fi
 if [ $RES -ne 0 ] ; then
         lerr "$CMD: $MSG"
@@ -986,5 +986,6 @@ else
 	lerr "$CMD: ${SPECTRE} script not found"
 fi
 
+linfo "OK - Finished"
 exit 0
 
